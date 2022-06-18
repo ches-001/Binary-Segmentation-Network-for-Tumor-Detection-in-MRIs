@@ -65,7 +65,7 @@ class SegementationMetric(nn.Module):
             condition_6 = (ground_truth.dtype != torch.float32)
 
             assert not condition_1, (f'Presence of NaN values in predictions, size: {prediction[prediction != prediction].shape}')
-            assert not condition_2, (f'Presence of NaN values in ground_truth: {ground_truth[ground_truth != ground_truth].shape}')
+            assert not condition_2, (f'Presence of NaN values in ground_truth, size: {ground_truth[ground_truth != ground_truth].shape}')
             assert not condition_3, (f'out of range values in prediction, max: {prediction.max()}, min: {prediction.min()}')
             assert not condition_4, (f'out of range values in ground_truth, max: {ground_truth.max()}, min: {ground_truth.min()}')
             assert not condition_5, (f'invalid data type for prediction tensor: {prediction.dtype}')
