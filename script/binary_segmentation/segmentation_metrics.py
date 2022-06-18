@@ -2,8 +2,9 @@ import torch.nn as nn
 import torch, warnings
 from monai.metrics import compute_hausdorff_distance
 
+
 class SegementationMetric(nn.Module):
-    def __init__(self, w1=0.6, w2=0.4):
+    def __init__(self, w1=0.6, w2=0.4, debug=False):
         """
         w1 corresponds to weightage of hausdorff distance
         w2 corresponds to weightage of dice coefficent score
@@ -14,6 +15,7 @@ class SegementationMetric(nn.Module):
 
         self.w1 = w1
         self.w2 = w2
+        self.debug = debug
         self.bce_loss = nn.BCELoss()
 
     
@@ -50,9 +52,30 @@ class SegementationMetric(nn.Module):
       
     def metric_values(self, prediction, ground_truth):
         #input shape: N, C, H, W
+
+        if self.debug:
+            #........debug start.............
+            condition_1 = len(prediction[prediction != prediction]) != 0
+            condition_2 = len(ground_truth[ground_truth != ground_truth]) != 0
+
+            condition_3 = prediction.max() > 1 or prediction.min() < 0
+            condition_4 = ground_truth.max() > 1 or ground_truth.min() < 0
+
+            condition_5 = (prediction.dtype != torch.float32)
+            condition_6 = (ground_truth.dtype != torch.float32)
+
+            assert not condition_1, (f'Presence of NaN values in predictions, size: {prediction[prediction != prediction].shape}')
+            assert not condition_2, (f'Presence of NaN values in ground_truth: {ground_truth[ground_truth != ground_truth].shape}')
+            assert not condition_3, (f'out of range values in prediction, max: {prediction.max()}, min: {prediction.min()}')
+            assert not condition_4, (f'out of range values in ground_truth, max: {ground_truth.max()}, min: {ground_truth.min()}')
+            assert not condition_5, (f'invalid data type for prediction tensor: {prediction.dtype}')
+            assert not condition_6, (f'invalid data type for ground_truth tensor: {ground_truth.dtype}')
+            #........debug stop..............
+
         hausdorff_distance = self.hausdorff_distance(prediction, ground_truth)
         dice_coeff = self.dice_coeff(prediction, ground_truth)
         bce_loss = self.bce_loss(prediction, ground_truth)
+
         return hausdorff_distance, dice_coeff, bce_loss
 
     
@@ -64,5 +87,6 @@ class SegementationMetric(nn.Module):
         acc_score = (self.w1 * (1 - hausdorff_distance)) + (self.w2 * dice_coeff)
         loss = (1 + bce_loss) * (1 - acc_score).requires_grad_(True)
         return loss
+    
     
     
