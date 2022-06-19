@@ -35,11 +35,12 @@ class CustomRandomRotation(object):
 
   
 class CustomRandomResizedCrop(object):
-    def __init__(self, p, size=224):
+    def __init__(self, p, size=224, scale=(0.3, 1.0)):
         self.p = p
         self.size = size
+        self.scale = scale
         self.random_rotation = transforms.RandomResizedCrop(
-            self.size, interpolation=transforms.InterpolationMode.NEAREST)
+            self.size, scale=self.scale, interpolation=transforms.InterpolationMode.NEAREST)
 
     def __call__(self, sample):
         #input shape: (C, 224, 224)
