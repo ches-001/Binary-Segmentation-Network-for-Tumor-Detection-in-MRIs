@@ -3,7 +3,7 @@
 Link to Dataset: ![](https://www.kaggle.com/competitions/uw-madison-gi-tract-image-segmentation/data).
 **NB**: To utilise this dataset, accept the rules of the kaggle competition first of all.
 
-The Neural network architecture used in this implementation is a custom architecture made by me that consists of an encoder and a decoder network with skip connections between both network. In the encoder, the ResNet34 backbone was utilised for feature extraction.
+The Neural network architecture used in this implementation is a custom architecture I devised to enable residual connections between and two kinds of networks. The architecture consists of an encoder and a decoder network with skip/residual connections between both networks. In the encoder, the ResNet34 backbone was utilised for feature extraction in the encoder.
 The encoder outputs five feature maps, each map from each previous layer of the network. The feature maps are then fed into the decoder network that consists of convolutional transpose layers. The model outputs three mask segments from the three various classes (large bowel, small bowel and stomach). 
 
 The implementated network is not limited to MRI dataset, it can also be extended to other datasets for semantic image segmentation.
