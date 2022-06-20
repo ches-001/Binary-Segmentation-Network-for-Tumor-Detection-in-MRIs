@@ -30,7 +30,7 @@ class CustomRandomRotation(object):
         randn = np.random.rand()
         if randn < self.p:
             sample = self.random_rotation(sample)
-            sample[:, 1:, ...] = sample[:, 1:, ...].round()
+            sample[1:, ...] = sample[1:, ...].round()
         return sample
 
   
@@ -47,7 +47,7 @@ class CustomRandomResizedCrop(object):
         randn = np.random.rand()
         if randn < self.p: 
             sample = self.random_rotation(sample)
-            sample[:, 1:, ...] = sample[:, 1:, ...].round()
+            sample[1:, ...] = sample[1:, ...].round()
         return sample
         
 
