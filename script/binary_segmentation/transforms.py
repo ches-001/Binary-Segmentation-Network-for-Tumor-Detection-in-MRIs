@@ -39,14 +39,14 @@ class CustomRandomResizedCrop(object):
         self.p = p
         self.size = size
         self.scale = scale
-        self.random_rotation = transforms.RandomResizedCrop(
+        self.random_resizedcrop = transforms.RandomResizedCrop(
             self.size, scale=self.scale, interpolation=transforms.InterpolationMode.NEAREST)
 
     def __call__(self, sample):
         #input shape: (C, 224, 224)
         randn = np.random.rand()
         if randn < self.p: 
-            sample = self.random_rotation(sample)
+            sample = self.random_resizedcrop(sample)
             sample[1:, ...] = sample[1:, ...].round()
         return sample
         
