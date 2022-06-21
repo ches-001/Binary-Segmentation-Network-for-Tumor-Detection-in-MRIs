@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 
 
 class ImageDataset(Dataset):
-    def __init__(self, images, images_df, transform=None, tp=0.4):
+    def __init__(self, images, images_df, transform=None, tp=0.5):
         self.images = images
         self.images_df = images_df
         self.transform = transform
@@ -19,9 +19,6 @@ class ImageDataset(Dataset):
        
     def __getitem__(self, idx:int):
         image = self.images[idx]
-        image = np.max(image) - image
-        image = image - image.min()
-        image = image / image.max()
         image = np.expand_dims(image, axis=0)
         
         lb_seg_mask = self.rle2mask(image.shape[1:], self.images_df.large_bowel[idx])
@@ -42,9 +39,18 @@ class ImageDataset(Dataset):
                     ))
                 image, gt_mask = aug[0].unsqueeze(dim=0), aug[1:]
 
+        image = self.image_normalize(image)
         return image, gt_mask
     
     
+    def image_normalize(self, image):
+        #image size: (C, H, W)
+        image = image.max() - image
+        image = image - image.min()
+        image = image / image.max()
+        return image
+
+
     def rle2mask(self, img_shape, rle:str):
         #correct order: (H, W)
         H, W = img_shape

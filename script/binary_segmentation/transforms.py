@@ -11,7 +11,7 @@ class FirstChannelRandomGaussianBlur(object):
         self.gaussian_blur = transforms.GaussianBlur(kernel_size=self.kernel_size, sigma=self.sigma)
 
     def __call__(self, sample):
-        #input shape: (4, 224, 224)
+        #input shape: (4, H, W)
         image, mask = sample[0].unsqueeze(dim=0), sample[1:]
         randn = np.random.rand()
         if randn < self.p: image = self.gaussian_blur(image)
@@ -26,7 +26,7 @@ class CustomRandomRotation(object):
         self.random_rotation = transforms.RandomRotation(self.angle_range)
 
     def __call__(self, sample):
-        #input shape: (C, 224, 224)
+        #input shape: (C, H, W)
         randn = np.random.rand()
         if randn < self.p:
             sample = self.random_rotation(sample)
@@ -43,7 +43,7 @@ class CustomRandomResizedCrop(object):
             self.size, scale=self.scale, interpolation=transforms.InterpolationMode.NEAREST)
 
     def __call__(self, sample):
-        #input shape: (C, 224, 224)
+        #input shape: (C, H, W)
         randn = np.random.rand()
         if randn < self.p: 
             sample = self.random_resizedcrop(sample)
