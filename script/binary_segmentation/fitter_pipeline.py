@@ -35,7 +35,7 @@ class FitterPipeline:
         for epoch in range(epochs):
             loss, hd, dice_coeff = 0, 0, 0
             for idx, (image, gt_mask) in tqdm.tqdm(enumerate(dataloader)):
-                
+
                 self.model.zero_grad()
                 image, gt_mask = image.to(self.device), gt_mask.to(self.device)
                 

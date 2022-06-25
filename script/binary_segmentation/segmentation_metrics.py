@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch, warnings
 from monai.metrics import compute_hausdorff_distance
+from transforms import image_resize
 
 
 class SegementationMetric(nn.Module):
@@ -15,8 +16,9 @@ class SegementationMetric(nn.Module):
 
         self.w1 = w1
         self.w2 = w2
-        self.debug = debug
         self.bce_loss = nn.BCELoss()
+
+        self.debug = debug
 
     
     def hausdorff_distance(self, pred, target, max_dist=224):
@@ -87,6 +89,3 @@ class SegementationMetric(nn.Module):
         acc_score = (self.w1 * (1 - hausdorff_distance)) + (self.w2 * dice_coeff)
         loss = (1 + bce_loss) * (1 - acc_score).requires_grad_(True)
         return loss
-    
-    
-    

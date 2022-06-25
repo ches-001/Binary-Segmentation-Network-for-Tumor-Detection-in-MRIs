@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import torch
-from torchvision import transforms
 from torch.utils.data import Dataset
+from transforms import image_resize
 
 
 class ImageDataset(Dataset):
@@ -19,16 +19,15 @@ class ImageDataset(Dataset):
        
     def __getitem__(self, idx:int):
         image = self.images[idx]
-        image = np.expand_dims(image, axis=0)
+        image = np.expand_dims(image, axis=0).astype('float32')
+
+        original_H, original_W = image.shape[1:]
         
         lb_seg_mask = self.rle2mask(image.shape[1:], self.images_df.large_bowel[idx])
         sb_seg_mask = self.rle2mask(image.shape[1:], self.images_df.small_bowel[idx])
         stomach_seg_mask = self.rle2mask(image.shape[1:], self.images_df.stomach[idx])
         
-        gt_mask = np.stack((lb_seg_mask, sb_seg_mask, stomach_seg_mask), axis=0)
-
-        image = self.resize(image.astype('float32')) #shape: (1, H, W)
-        gt_mask = self.resize(gt_mask.astype('float32')) #shape: (3, H, W)
+        gt_mask = np.stack((lb_seg_mask, sb_seg_mask, stomach_seg_mask), axis=0).astype('float32')
 
         if self.transform:
             randn = np.random.rand()
@@ -39,7 +38,11 @@ class ImageDataset(Dataset):
                     ))
                 image, gt_mask = aug[0].unsqueeze(dim=0), aug[1:]
 
+        image = image_resize(image) #shape: (1, H, W)
+        gt_mask = image_resize(gt_mask) #shape: (3, H, W)
+
         image = self.image_normalize(image)
+
         return image, gt_mask
     
     
@@ -66,14 +69,3 @@ class ImageDataset(Dataset):
 
         mask = mask.reshape(H, W)
         return mask
-    
-    
-    def resize(self, image, size=(224, 224)):
-        #image shape: C, H, W or N, C, H, W
-        H, W = size
-        assert len(image.shape) == 3 or len(image.shape) == 4, 'input image must be of shape  C, H, W or N, C, H, W'
-
-        if isinstance(image, np.ndarray): image = torch.from_numpy(image) 
-        res_model = transforms.Resize((H, W), interpolation=transforms.InterpolationMode.NEAREST)
-        image = res_model(image)
-        return image

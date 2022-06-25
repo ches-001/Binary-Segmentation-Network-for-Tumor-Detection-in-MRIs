@@ -2,6 +2,7 @@ import os
 import torch.nn as nn
 import torch, torchvision
 from torchvision.models.resnet import ResNet, BasicBlock
+from transforms import image_resize
 
 
 MODEL_PARAM_DIR = r'model_params'
@@ -166,8 +167,12 @@ class SegmentNet(nn.Module):
             state_dict = torch.load(MODEL_PARAM_PATH, map_location=self.device)
             self.load_state_dict(state_dict['segmentation_net_params'])
     
-    def forward(self, x):
+    def forward(self, x, output_size=None):
         fmap1, fmap2, fmap3, fmap4, fmap5 = self.encoder(x)
-        segmentation_mask = self.decoder(fmap1, fmap2, fmap3, fmap4, fmap5) 
+        segmentation_mask = self.decoder(fmap1, fmap2, fmap3, fmap4, fmap5)
+
+        if output_size:
+            segmentation_mask = image_resize(segmentation_mask, size=output_size)
+        
         return segmentation_mask
     
