@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch, warnings
 from monai.metrics import compute_hausdorff_distance
-from transforms import image_resize
 
 
 class SegementationMetric(nn.Module):
