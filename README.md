@@ -1,4 +1,5 @@
 # Binary Segmentation Network for Tumor Detection in MRIs
+<hr>
 
 Link to Dataset: ![](https://www.kaggle.com/competitions/uw-madison-gi-tract-image-segmentation/data).
 **NB**: To utilise this dataset, accept the rules of the kaggle competition first of all.
@@ -10,9 +11,11 @@ The implementated network is not limited to MRI dataset, it can also be extended
 
 The model training and results on the tumor Segmentation implementation on Large bowel, small bowel and stomach of patient MRI scan of the gut area are in this jupyter notebook [here](https://github.com/ches-001/Binary-Segmentation-Network-for-Tumor-Detection-in-MRIs/blob/main/tumor_segmentation.ipynb).
 
+<br><br>
 
 
 ## HOW TO USE:
+<hr>
 
 clone the repository like so:
 `git clone https://github.com/ches-001/Binary-Segmentation-Network-for-Tumor-Detection-in-MRIs`
@@ -21,7 +24,7 @@ Within the `script` folder, copy the `binary_segmentation` folder to working dir
 
 
 
-### The model
+### The Model
 ```python
 from binary_segmentation import SegmentNet
 
@@ -68,7 +71,9 @@ spatial = SpatialEncoder(input_channels, block=Bottleneck, block_layers=[3, 4, 6
 Endevour to checkout the jupyter notebook on how to use these networks.
 
 
-### Dataset class
+<br><br>
+
+### Dataset Class
 The dataset class is used to compile the dataset to pass to the dataloader, this class can be used like so:
 
 ```python
@@ -90,6 +95,8 @@ dataset = ImageDataset(self, images, images_df, transform=T, tp=0.5)
 ```
 The `tp` argument corresponds to the probability of a given sample being transformed, `tp=1.0` implies that the transforms will be applied to the data samples all the time. Refer to ['the transforms code file']('https://github.com/ches-001/Binary-Segmentation-Network-for-Tumor-Detection-in-MRIs/blob/main/script/binary_segmentation/transforms.py') for more details on the keyword arguments of the `transforms.data_augmentation()`. You can also refer to the jupyter notebook or the code files for the inner workings of the classes as well as how they are used.
 
+
+<br><br>
 
 ### Loss functions
 The loss function utilised in this implementation is a combination of three kinds of losses, namely: **Probability distribution loss**, **Region based loss** and **Boundary based loss**
@@ -126,9 +133,9 @@ You can also get the BCE loss, the Hausdorff distance and the Dice coefficient s
 bce_loss, hausdorff, dice_score = metricfunc.metric_values(pred, target)
 ```
 
+<br><br>
 
-
-### pipeline
+### Pipeline
 The pipeline can also be used in similar fashion as other classes, it takes the segmentation model, loss function, optimizer and device as positional arguments like so:
 
 ```python
@@ -197,9 +204,13 @@ for i in range(EPOCHS):
         pipeline.save_model()
 ```
 
+<br><br>
 
 
 ## RESULTS
+
+<hr>
+
 ![result image3](https://user-images.githubusercontent.com/70514310/173208446-8ab71d8f-c0b9-441a-a6dc-a1a874d03f3c.png)
 
 ![result image2](https://user-images.githubusercontent.com/70514310/173208460-2e14db9c-256f-43b2-862f-e497a52151a9.png)
