@@ -71,7 +71,7 @@ spatial = SpatialEncoder(input_channels, block=Bottleneck, block_layers=[3, 4, 6
 Endevour to checkout the jupyter notebook on how to use these networks.
 
 
-<br><br>
+<br>
 
 ### Dataset Class
 The dataset class is used to compile the dataset to pass to the dataloader, this class can be used like so:
@@ -96,7 +96,7 @@ dataset = ImageDataset(self, images, images_df, transform=T, tp=0.5)
 The `tp` argument corresponds to the probability of a given sample being transformed, `tp=1.0` implies that the transforms will be applied to the data samples all the time. Refer to ['the transforms code file']('https://github.com/ches-001/Binary-Segmentation-Network-for-Tumor-Detection-in-MRIs/blob/main/script/binary_segmentation/transforms.py') for more details on the keyword arguments of the `transforms.data_augmentation()`. You can also refer to the jupyter notebook or the code files for the inner workings of the classes as well as how they are used.
 
 
-<br><br>
+<br>
 
 ### Loss functions
 The loss function utilised in this implementation is a combination of three kinds of losses, namely: **Probability distribution loss**, **Region based loss** and **Boundary based loss**
@@ -133,10 +133,10 @@ You can also get the BCE loss, the Hausdorff distance and the Dice coefficient s
 bce_loss, hausdorff, dice_score = metricfunc.metric_values(pred, target)
 ```
 
-<br><br>
+<br>
 
-### Pipeline
-The pipeline can also be used in similar fashion as other classes, it takes the segmentation model, loss function, optimizer and device as positional arguments like so:
+### The Pipeline Class
+The pipeline class can also be used in similar fashion as other classes, it takes the segmentation model, loss function, optimizer and device as positional arguments like so:
 
 ```python
 from binary_segmentation import SegmentationMetric
@@ -204,7 +204,7 @@ for i in range(EPOCHS):
         pipeline.save_model()
 ```
 
-<br><br>
+<br>
 
 
 ## RESULTS
