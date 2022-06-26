@@ -10,6 +10,8 @@ The implementated network is not limited to MRI dataset, it can also be extended
 
 The model training and results on the tumor Segmentation implementation on Large bowel, small bowel and stomach of patient MRI scan of the gut area are in this jupyter notebook [here](https://github.com/ches-001/Binary-Segmentation-Network-for-Tumor-Detection-in-MRIs/blob/main/tumor_segmentation.ipynb).
 
+
+
 ### How to use:
 
 clone the repository like so:
@@ -17,14 +19,50 @@ clone the repository like so:
 
 Within the `script` folder, copy the `binary_segmentation` folder to working directory and import the neural network like so:
 
-```
+```python
 from binary_segmentation import SegmentNet
+
+if __name__ == '__main__':
+    # model parameters
+    input_channels = 1
+    last_fmap_channel = 512
+    output_channel = 1 
+    n_classes = 3
+
+    model = SegmentNet(input_channels, last_fmap_channel, output_channel, n_classes)
 ```
 
 Similarly, the encoder and decoder networks can be imported in same fashion like so:
-```
+```python
 from binary_segmentation import SpatialEncoder, Decoder
+
+if __name__ == '__main__':
+    # model parameters
+    input_channels = 1
+    last_fmap_channel = 512
+    output_channel = 1 
+    n_classes = 3
+
+    encoder = SpatialEncoder(input_channels, dropout=0.2, pretrained=False)
+    decoder = Decoder(last_fmap_channel, output_channel, n_classes, dropout=0.2)
+
+    fmap_1, fmap_2, fmap_3, fmap_4, fmap_5 = encoder(torch.randn(10, 1, 224, 224))
 ```
+The encoder uses ResNet34 as backbone network, so the pretrained should be set to `True` if `input_channels == 3`.
+
+The input shape to the encoder should be any size, such that when divided by two atleast four times would yield an even number, eg: (224, 224), (256, 256), (512, 512) or any other multiples of 224 or 256. This is so that the 5 feature maps passed into the decoder tally with the `ConvTranspose2d` layers of the decoder. Failure to do so might result in an error.
+
+You can overwrite the backbone network to another ResNet likes ResNet50 like so:
+
+```python
+from torchvision.models.resnet import Bottleneck
+
+#resnet 50 backbone
+spatial = SpatialEncoder(1, block=Bottleneck, block_layers=[3, 4, 6, 3])
+```
+**NOTE** when changing to another ResNet backbone, the output channel of the last convolutional layer is the `last_fmap_channel` of the decoder network
+
+
 
 Endevour to checkout the jupyter notebook on how to use these networks.
 
@@ -48,17 +86,82 @@ The optimizer used for this implementation is the ADAM (Adaptive Moment Estimati
 
 Similar to the other two imports, the loss function can be imported and used like so:
 
-```
+```python
 from binary_segmentation import SegmentationMetric
 
-metricfunc = SegmentationMetric()
+metricfunc = SegmentationMetric(w1=0.5, w2=o.5, debug=False)
 loss = metricfunc(pred, target)
 ```
+**NOTE:** You should enable debug mode when training with CUDA to catch unforseen errors and give you the corresponding location of said error. Debug mode is slightly slower than normal mode.
 
 You can also get the BCE loss, the Hausdorff distance and the Dice coefficient score of a given prediction/target pair like so:
 
-```
+```python
 bce_loss, hausdorff, dice_score = metricfunc.metric_values(pred, target)
+```
+
+The pipeline can also be used in similar fashion as other classes, it takes the segmentation model, 
+
+```python
+from binary_segmentation import SegmentationMetric
+
+pipeline = FitterPipeline(model, lossfunc, optimizer, device)
+```
+
+You can use a learning rate scheduler for your optimizer like so:
+```python
+import torch
+
+lr_scheduler = torch.optim.lr_scheduler.StepLR(
+    pipeline.optimizer, step_size=28, gamma=0.1, verbose=True)
+```
+
+To train and test your model with the pipeline, you can use the `train()` and `test()` methods like so:
+
+```python
+train_metric_values = pipeline.train(train_dataloader, epochs=10, verbose=False)
+test_metric_values = pipeline.test(test_dataloader, verbose=True)
+```
+
+If you would like to test the model after every single epoch, then you can do as follows:
+
+```python
+print(f'Model is training on {torch.cuda.get_device_name()} \n\n')
+
+EPOCHS = 60
+
+training_losses, training_hds, training_dice_coeffs = [], [], []
+testing_losses, testing_hds, testing_dice_coeffs = [], [], []
+
+w1, w2 = 0.6, 0.4
+
+best_loss = np.inf
+for i in range(EPOCHS):
+    print(f'\n\nepoch: {i}')
+    train_loss, training_hd, train_dice_coeff = pipeline.train(train_dataloader)
+    training_losses.append(train_loss[0])
+    training_hds.append(training_hd[0])
+    training_dice_coeffs.append(train_dice_coeff[0])
+    print(
+        f'\ntraining loss: {train_loss[0]}',
+        f'\ntraining hausdorff dist: {training_hd[0]}',
+        f'\ntraining dice coeff: {train_dice_coeff[0]}', 
+        f'\ntrain score: {(w1 * (1 - training_hd[0])) + (w2 * train_dice_coeff[0])}')
+    
+    test_loss, testing_hd, test_dice_coeff = pipeline.test(test_dataloader)
+    testing_losses.append(test_loss)
+    testing_hds.append(testing_hd)
+    testing_dice_coeffs.append(test_dice_coeff)
+    print(f'testing loss: {test_loss}', 
+          f'\ntesting hausdorff dist: {testing_hd}', 
+          f'\ntesting dice coeff: {test_dice_coeff}',
+          f'\ntest score: {(w1 * (1 - testing_hd)) + (w2 * test_dice_coeff)}')
+    
+    lr_scheduler.step()
+    if test_loss < best_loss:
+        best_loss = test_loss
+        pipeline.save_model()
+        print(f'model saved at epoch {i}')
 ```
 
 

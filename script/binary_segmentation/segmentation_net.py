@@ -14,8 +14,13 @@ MODEL_PARAM_PATH = os.path.join(
 
 
 class SpatialEncoder(ResNet):
-    def __init__(self, input_channels, dropout=0.2, pretrained=False):
-        super(SpatialEncoder, self).__init__(BasicBlock, [3, 4, 6, 3])
+    def __init__(self, input_channels, dropout=0.2, 
+                 pretrained=False, block=BasicBlock, block_layers=[3, 4, 6, 3]):
+      
+        self.block = block
+        self.block_layers = block_layers
+        
+        super(SpatialEncoder, self).__init__(self.block, self.block_layers)
         
         self.input_channels = input_channels
         self.dropout = dropout
