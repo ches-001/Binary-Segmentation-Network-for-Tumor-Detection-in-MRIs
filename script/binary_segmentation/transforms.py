@@ -73,8 +73,8 @@ def data_augmentation(**kwargs):
         'Hflip_p':0.5, 
         'Vflip_p':0.5, 
         'blur_p':0.5, 
-        'rotation_angle_range':(0, 60),
-        'crop_scale':(0.3, 1.0),
+        'rotation_angle_range':(-60, 60),
+        'crop_scale':(0.1, 1.0),
         'blur_kernel_size':(5, 9),
         'blur_sigma':(0.1, 11),
         }
