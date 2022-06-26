@@ -20,11 +20,13 @@ class SegementationMetric(nn.Module):
         self.debug = debug
 
     
-    def hausdorff_distance(self, pred, target, max_dist=224):
+    def hausdorff_distance(self, pred, target):
         #pred shape: (N, C, H, W)
         #target shape: (N, C, H, W)
         pred = pred.detach().cpu().round()
         target = target.cpu()
+
+        max_dist = max(target.shape[2:])
 
         warnings.filterwarnings("ignore")
 
