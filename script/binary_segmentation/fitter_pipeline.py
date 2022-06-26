@@ -2,16 +2,24 @@ import torch.nn as nn
 import torch, tqdm, os
 
 class FitterPipeline:
-    def __init__(self, model, lossfunc, optimizer, device='cpu'):
+    def __init__(self, model, lossfunc, optimizer, device='cpu', 
+    weight_init=True, custom_weight_initializer=None):
+    
         self.device = device
         self.model = model.to(self.device)
         self.lossfunc = lossfunc
         self.optimizer = optimizer
+        self.weight_init = weight_init
+        self.custom_weight_initializer = custom_weight_initializer
         
-        self.model.apply(self.init_weights)
+        if self.weight_init:
+            if self.custom_weight_initializer:
+                self.model.apply(self.custom_weight_initializer)
+            else:
+                self.model.apply(self.xavier_init_weights)
         
     
-    def init_weights(self, m):
+    def xavier_init_weights(self, m):
         if isinstance(m, nn.Conv2d):
             nn.init.xavier_uniform_(m.weight)
             if torch.is_tensor(m.bias):

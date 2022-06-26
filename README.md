@@ -12,13 +12,16 @@ The model training and results on the tumor Segmentation implementation on Large
 
 
 
-### How to use:
+## HOW TO USE:
 
 clone the repository like so:
 `git clone https://github.com/ches-001/Binary-Segmentation-Network-for-Tumor-Detection-in-MRIs`
 
 Within the `script` folder, copy the `binary_segmentation` folder to working directory and import the neural network like so:
 
+
+
+### The model
 ```python
 from binary_segmentation import SegmentNet
 
@@ -32,7 +35,7 @@ if __name__ == '__main__':
     model = SegmentNet(input_channels, last_fmap_channel, output_channel, n_classes)
 ```
 
-Similarly, the encoder and decoder networks can be imported in same fashion like so:
+The encoder and decoder networks can be imported a similar fashion like so:
 ```python
 from binary_segmentation import SpatialEncoder, Decoder
 
@@ -58,14 +61,37 @@ You can overwrite the backbone network to another ResNet likes ResNet50 like so:
 from torchvision.models.resnet import Bottleneck
 
 #resnet 50 backbone
-spatial = SpatialEncoder(1, block=Bottleneck, block_layers=[3, 4, 6, 3])
+spatial = SpatialEncoder(input_channels, block=Bottleneck, block_layers=[3, 4, 6, 3])
 ```
-**NOTE** when changing to another ResNet backbone, the output channel of the last convolutional layer is the `last_fmap_channel` of the decoder network
-
-
+**NOTE** when changing to another ResNet backbone, the output channel of the last convolutional layer is the `last_fmap_channel` of the decoder network, Eg: for ResNet50, the last_fmap_channel is 2048.
 
 Endevour to checkout the jupyter notebook on how to use these networks.
 
+
+### Dataset class
+The dataset class is used to compile the dataset to pass to the dataloader, this class can be used like so:
+
+```python
+from binary_segmentation import ImageDataset
+
+dataset = ImageDataset(self, images, images_df)
+```
+The `images` argument is a list or tuple of training images and the `images_df` is a pandas dataframe with metadata corresponding to each of the images in the list/tuple.
+In this implementation, because of the size of the image data it was decided that loading them all at once to populate a list was best as it would be faster than simply loading each sample from ROM storage.
+
+To use data augmentation techniques alongside the image dataset, you can do as follows:
+
+```python
+from binary_segmentation import transforms
+
+T = transforms.data_augmentation()
+
+dataset = ImageDataset(self, images, images_df, transform=T, tp=0.5)
+```
+The `tp` argument corresponds to the probability of a given sample being transformed, `tp=1.0` implies that the transforms will be applied to the data samples all the time. Refer to ['the transforms code file']('https://github.com/ches-001/Binary-Segmentation-Network-for-Tumor-Detection-in-MRIs/blob/main/script/binary_segmentation/transforms.py') for more details on the keyword arguments of the `transforms.data_augmentation()`. You can also refer to the jupyter notebook or the code files for the inner workings of the classes as well as how they are used.
+
+
+### Loss functions
 The loss function utilised in this implementation is a combination of three kinds of losses, namely: **Probability distribution loss**, **Region based loss** and **Boundary based loss**
 
 The loss is given as: $$L = (1+Lbce) * [1 - (w_1*(1-Lhd) + w_2*(1 - Ldc))]$$
@@ -100,7 +126,10 @@ You can also get the BCE loss, the Hausdorff distance and the Dice coefficient s
 bce_loss, hausdorff, dice_score = metricfunc.metric_values(pred, target)
 ```
 
-The pipeline can also be used in similar fashion as other classes, it takes the segmentation model, 
+
+
+### pipeline
+The pipeline can also be used in similar fashion as other classes, it takes the segmentation model, loss function, optimizer and device as positional arguments like so:
 
 ```python
 from binary_segmentation import SegmentationMetric
@@ -108,7 +137,23 @@ from binary_segmentation import SegmentationMetric
 pipeline = FitterPipeline(model, lossfunc, optimizer, device)
 ```
 
-You can use a learning rate scheduler for your optimizer like so:
+When the model is passed to the pipeline, the weights of the `Conv2d` layers are initialised with *Xavier init*. This can be disabled by setting `weight_init = False`.
+
+You can also add a custom weight initialiser like so:
+
+```python
+def init_weight_func(m):
+    if isinstance(m, nn.Conv2d):
+        nn.init.xavier_uniform_(m.weight)
+        if torch.is_tensor(m.bias):
+            m.bias.data.fill_(0.01)
+
+pipeline = FitterPipeline(
+    model, lossfunc, optimizer, device, weight_init=True, 
+    custom_weight_initializer=init_weight_func)
+```
+
+You can also use a learning rate scheduler for your optimizer after it has been passed to the pipeline class like so:
 ```python
 import torch
 
@@ -116,56 +161,45 @@ lr_scheduler = torch.optim.lr_scheduler.StepLR(
     pipeline.optimizer, step_size=28, gamma=0.1, verbose=True)
 ```
 
-To train and test your model with the pipeline, you can use the `train()` and `test()` methods like so:
+To train and test your model on the pipeline class, you can use the `train()` and `test()` methods like so:
 
 ```python
 train_metric_values = pipeline.train(train_dataloader, epochs=10, verbose=False)
 test_metric_values = pipeline.test(test_dataloader, verbose=True)
+
+#save model
+pipeline.save_model()
 ```
 
-If you would like to test the model after every single epoch, then you can do as follows:
+If you would like to test the model after every single epoch of training, then you can do as follows:
 
 ```python
-print(f'Model is training on {torch.cuda.get_device_name()} \n\n')
-
-EPOCHS = 60
-
+#list for storing metric values at every iteration
 training_losses, training_hds, training_dice_coeffs = [], [], []
 testing_losses, testing_hds, testing_dice_coeffs = [], [], []
 
-w1, w2 = 0.6, 0.4
-
 best_loss = np.inf
 for i in range(EPOCHS):
-    print(f'\n\nepoch: {i}')
     train_loss, training_hd, train_dice_coeff = pipeline.train(train_dataloader)
     training_losses.append(train_loss[0])
     training_hds.append(training_hd[0])
     training_dice_coeffs.append(train_dice_coeff[0])
-    print(
-        f'\ntraining loss: {train_loss[0]}',
-        f'\ntraining hausdorff dist: {training_hd[0]}',
-        f'\ntraining dice coeff: {train_dice_coeff[0]}', 
-        f'\ntrain score: {(w1 * (1 - training_hd[0])) + (w2 * train_dice_coeff[0])}')
+
     
     test_loss, testing_hd, test_dice_coeff = pipeline.test(test_dataloader)
     testing_losses.append(test_loss)
     testing_hds.append(testing_hd)
     testing_dice_coeffs.append(test_dice_coeff)
-    print(f'testing loss: {test_loss}', 
-          f'\ntesting hausdorff dist: {testing_hd}', 
-          f'\ntesting dice coeff: {test_dice_coeff}',
-          f'\ntest score: {(w1 * (1 - testing_hd)) + (w2 * test_dice_coeff)}')
     
     lr_scheduler.step()
     if test_loss < best_loss:
         best_loss = test_loss
         pipeline.save_model()
-        print(f'model saved at epoch {i}')
 ```
 
 
-### Results
+
+## RESULTS
 ![result image3](https://user-images.githubusercontent.com/70514310/173208446-8ab71d8f-c0b9-441a-a6dc-a1a874d03f3c.png)
 
 ![result image2](https://user-images.githubusercontent.com/70514310/173208460-2e14db9c-256f-43b2-862f-e497a52151a9.png)

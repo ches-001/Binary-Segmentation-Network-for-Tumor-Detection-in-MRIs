@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
-from transforms import image_resize
+from binary_segmentation.transforms import image_resize
 
 
 class ImageDataset(Dataset):
