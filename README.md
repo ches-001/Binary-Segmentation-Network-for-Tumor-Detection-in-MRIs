@@ -17,7 +17,7 @@ clone the repository like so:
 
 Within the `script` folder, copy the `binary_segmentation` folder to working directory and import the neural network like so:
 
-```
+```python
 from binary_segmentation import SegmentNet
 ```
 
