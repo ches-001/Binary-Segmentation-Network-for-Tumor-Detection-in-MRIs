@@ -87,9 +87,9 @@ In this implementation, because of the size of the image data it was decided tha
 To use data augmentation techniques alongside the image dataset, you can do as follows:
 
 ```python
-from binary_segmentation import transforms
+from binary_segmentation import data_augmentation
 
-T = transforms.data_augmentation()
+T = data_augmentation()
 
 dataset = ImageDataset(self, images, images_df, transform=T, tp=0.5)
 ```
@@ -139,7 +139,7 @@ bce_loss, hausdorff, dice_score = metricfunc.metric_values(pred, target)
 The pipeline class can also be used in similar fashion as other classes, it takes the segmentation model, loss function, optimizer and device as positional arguments like so:
 
 ```python
-from binary_segmentation import SegmentationMetric
+from binary_segmentation import FitterPipeline
 
 pipeline = FitterPipeline(model, lossfunc, optimizer, device)
 ```
