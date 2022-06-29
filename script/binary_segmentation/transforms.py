@@ -72,7 +72,11 @@ def image_normalize(image):
     return image
 
 
-def image_normalize_with_noise(image, alpha=torch.Tensor([1, 0.8])):
+def image_normalize_with_noise(image, alpha=torch.Tensor([1, 0.5]), p=0.7):
+
+    randn = np.random.rand()
+
+    if randn > p: return image_normalize(image)
 
     if isinstance(alpha, int) or isinstance(alpha, float):
         alpha = torch.Tensor([alpha for i in range(2)])

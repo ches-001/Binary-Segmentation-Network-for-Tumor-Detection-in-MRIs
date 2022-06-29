@@ -1,7 +1,7 @@
 import os
 import torch.nn as nn
 import torch, torchvision
-from torchvision.models.resnet import ResNet, BasicBlock, Bottleneck
+from torchvision.models.resnet import ResNet, BasicBlock
 from binary_segmentation.transforms import image_resize
 
 
