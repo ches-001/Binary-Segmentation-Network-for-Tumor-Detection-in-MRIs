@@ -64,6 +64,39 @@ def image_resize(image, size=(224, 224)):
     return image
 
 
+def image_normalize(image):
+    #image size: (C, H, W)
+    image = image.max() - image
+    image = image - image.min()
+    image = image / image.max()
+    return image
+
+
+def image_normalize_with_noise(image, alpha=torch.Tensor([1, 0.8])):
+
+    if isinstance(alpha, int) or isinstance(alpha, float):
+        alpha = torch.Tensor([alpha for i in range(2)])
+
+    elif torch.is_tensor(alpha):
+        alpha = alpha
+
+    else:
+        raise ValueError(f'invalid alpha type, {type(alpha)}')
+
+    weights = torch._sample_dirichlet(alpha)
+    w2 = weights.min()
+    weights = weights[weights!=w2]
+    w1 = weights
+        
+    minmax_norm = image_normalize(image)
+    noise = torch.normal(mean=0, std=1, size=image.shape)
+    noise = image_normalize(noise)
+
+    mix = (w1*minmax_norm) + (w2*noise)
+    return mix
+        
+
+
 def data_augmentation(**kwargs):
 
     defaultKwargs = {
@@ -82,11 +115,11 @@ def data_augmentation(**kwargs):
     kwargs = {**defaultKwargs, **kwargs}
 
     transform_list = [
-      CustomRandomResizedCrop(p=kwargs['crop_p'], scale=kwargs['crop_scale']),
-      CustomRandomRotation(p=kwargs['rotation_p'], angle_range=kwargs['rotation_angle_range']),
-      transforms.RandomHorizontalFlip(kwargs['Hflip_p']),
-      transforms.RandomVerticalFlip(kwargs['Vflip_p']),
-      FirstChannelRandomGaussianBlur(kwargs['blur_p'], kernel_size=kwargs['blur_kernel_size'], sigma=kwargs['blur_sigma']),
+        CustomRandomResizedCrop(p=kwargs['crop_p'], scale=kwargs['crop_scale']),
+        CustomRandomRotation(p=kwargs['rotation_p'], angle_range=kwargs['rotation_angle_range']),
+        transforms.RandomHorizontalFlip(kwargs['Hflip_p']),
+        transforms.RandomVerticalFlip(kwargs['Vflip_p']),
+        FirstChannelRandomGaussianBlur(kwargs['blur_p'], kernel_size=kwargs['blur_kernel_size'], sigma=kwargs['blur_sigma']),
     ]
     if kwargs['shuffle_tranforms']: random.shuffle(transform_list)
     T = transforms.Compose(transform_list)

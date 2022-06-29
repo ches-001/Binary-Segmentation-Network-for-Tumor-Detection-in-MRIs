@@ -1,7 +1,7 @@
 import os
 import torch.nn as nn
 import torch, torchvision
-from torchvision.models.resnet import ResNet, BasicBlock
+from torchvision.models.resnet import ResNet, BasicBlock, Bottleneck
 from binary_segmentation.transforms import image_resize
 
 
@@ -26,14 +26,6 @@ class SpatialEncoder(ResNet):
         self.dropout = dropout
         self.pretrained = pretrained
         
-        #init resnet18 weights
-        if self.input_channels == 3:
-            self.load_state_dict(
-                torchvision.models.resnet18(
-                    pretrained=self.pretrained
-                ).state_dict()
-            )
-        
         self.conv1 = nn.Conv2d(
             self.input_channels, 64, 
             kernel_size=(7, 7), 
@@ -49,13 +41,17 @@ class SpatialEncoder(ResNet):
             bias=False)
         
         self.dropout_layer = nn.Dropout(self.dropout)
+
+        #delete unwanted layers
+        del self.maxpool, self.fc, self.avgpool
         
         
     def forward(self, x):
         fmap1 = self.conv1(x)
         x = self.conv2(fmap1)
         x = self.bn1(x)
-        x = self.dropout_layer(self.relu(x))
+        x = self.relu(x)
+        x = self.dropout_layer(x)
         fmap2 = self.layer1(x)
         fmap3 = self.layer2(fmap2)
         fmap4 = self.layer3(fmap3)
