@@ -3,6 +3,43 @@ import torch, random
 from torchvision import transforms
 
 
+class Noise:
+    
+    @staticmethod
+    def apply_gaussian(image, mean=0, std=1):
+        noise = torch.normal(mean=mean, std=std, size=image.shape)
+        image = image + noise
+        return image
+
+    @staticmethod
+    def apply_speckle(image, mean=0, std=1):
+        speckle = image * Noise.apply_gaussian(image, mean, std)
+        image = image + speckle
+        return image
+
+
+    @staticmethod
+    def apply_salt_and_pepper(image, n_pixels=500):
+        _, H, W = image.shape
+
+        for op in ['salt', 'pepper']:
+            val = image.max()
+            if op == 'pepper':val = 0
+            
+            for i in range(n_pixels):
+                x_coord = random.randint(0, W-1)
+                y_coord = random.randint(0, H-1)
+                image[:, y_coord, x_coord] = val
+        return image
+        
+    @staticmethod
+    def apply_poisson(image, rate=5):
+        noise = torch.rand(*image.shape) * rate
+        noise = torch.poisson(noise)
+        image = image + noise
+        return image
+
+
 class FirstChannelRandomGaussianBlur(object):
     def __init__(self, p, kernel_size=(5, 9), sigma=(0.1, 11)):
         self.p = p
@@ -12,13 +49,53 @@ class FirstChannelRandomGaussianBlur(object):
 
     def __call__(self, sample):
         #input shape: (4, H, W)
+        if self.p < random.random():return sample
+
         image, mask = sample[0].unsqueeze(dim=0), sample[1:]
-        randn = np.random.rand()
-        if randn < self.p: image = self.gaussian_blur(image)
+        image = self.gaussian_blur(image)
         sample = torch.cat((image, mask), dim=0)
         return sample
 
 
+class FirstChannelRandomNoise(object):
+    def __init__(self, p=0.5, **kwargs):
+        defaultKwargs = {
+            'mean_range':(0, 50),
+            'std_range':(1, 50),
+            'sp_px_range':(300, 5000),
+            'poisson_rate_range':(5, 100)}
+        
+        self.p = p
+        self.kwargs = {**defaultKwargs, **kwargs}
+        self.ops = ('gaussian', 'speckle', 'salt_&_pepper', 'poisson')
+
+    def __call__(self, sample):
+        if self.p < random.random():return sample
+
+        image, mask = sample[0].unsqueeze(dim=0), sample[1:]
+        op = random.choice(self.ops)
+        if op == 'gaussian':
+            mean = random.randint(*self.kwargs['mean_range'])
+            std = random.randint(*self.kwargs['std_range'])
+            image = Noise.apply_gaussian(image, mean, std)
+
+        elif op == 'speckle':
+            mean = random.randint(*self.kwargs['mean_range'])
+            std = random.randint(*self.kwargs['std_range'])
+            image = Noise.apply_speckle(image, mean, std)
+
+        elif op == 'salt_&_pepper':
+            n_pixels = random.randint(*self.kwargs['sp_px_range'])
+            image = Noise.apply_salt_and_pepper(image, n_pixels)
+
+        elif op == 'poisson':
+            rate = random.randint(*self.kwargs['poisson_rate_range'])
+            image = Noise.apply_poisson(image, rate)
+
+        sample = torch.cat((image, mask), dim=0)
+        return sample
+
+        
 class CustomRandomRotation(object):
     def __init__(self, p, angle_range=(0, 360)):
         self.p = p
@@ -27,30 +104,27 @@ class CustomRandomRotation(object):
 
     def __call__(self, sample):
         #input shape: (C, H, W)
-        randn = np.random.rand()
-        if randn < self.p:
-            sample = self.random_rotation(sample)
-            sample[1:, ...] = sample[1:, ...].round()
+        if self.p < random.random():return sample
+
+        sample = self.random_rotation(sample)
         return sample
 
   
 class CustomRandomResizedCrop(object):
-    def __init__(self, p, scale=(0.3, 1.0)):
+    def __init__(self, p, scale=(0.5, 1.0)):
         self.p = p
         self.scale = scale
 
     def __call__(self, sample):
         #input shape: (C, H, W)
+        if self.p < random.random():return sample
+
         _, H, W = sample.shape
-        randn = np.random.rand()
         random_resizedcrop = transforms.RandomResizedCrop(
             (H, W), scale=self.scale, interpolation=transforms.InterpolationMode.NEAREST)
-        
-        if randn < self.p: 
-            sample = random_resizedcrop(sample)
-            sample[1:, ...] = sample[1:, ...].round()
+        sample = random_resizedcrop(sample)
         return sample
-        
+
 
 def image_resize(image, size=(224, 224)):
     #image shape: C, H, W or N, C, H, W
@@ -69,36 +143,7 @@ def image_normalize(image):
     image = image.max() - image
     image = image - image.min()
     image = image / image.max()
-    return image
-
-
-def image_normalize_with_noise(image, alpha=torch.Tensor([1, 0.5]), p=0.7):
-
-    randn = np.random.rand()
-
-    if randn > p: return image_normalize(image)
-
-    if isinstance(alpha, int) or isinstance(alpha, float):
-        alpha = torch.Tensor([alpha for i in range(2)])
-
-    elif torch.is_tensor(alpha):
-        alpha = alpha
-
-    else:
-        raise ValueError(f'invalid alpha type, {type(alpha)}')
-
-    weights = torch._sample_dirichlet(alpha)
-    w2 = weights.min()
-    weights = weights[weights!=w2]
-    w1 = weights
-        
-    minmax_norm = image_normalize(image)
-    noise = torch.normal(mean=0, std=1, size=image.shape)
-    noise = image_normalize(noise)
-
-    mix = (w1*minmax_norm) + (w2*noise)
-    return mix
-        
+    return image    
 
 
 def data_augmentation(**kwargs):
@@ -109,10 +154,11 @@ def data_augmentation(**kwargs):
         'rotation_p':0.5, 
         'Hflip_p':0.5, 
         'Vflip_p':0.5, 
-        'blur_p':0.5, 
+        'blur_p':0.5,
+        'noise_p':0.5,
         'rotation_angle_range':(-60, 60),
-        'crop_scale':(0.1, 1.0),
-        'blur_kernel_size':(5, 9),
+        'crop_scale':(0.5, 1.0),
+        'blur_kernel_size':(3, 9),
         'blur_sigma':(0.1, 11),
         }
 
@@ -124,6 +170,7 @@ def data_augmentation(**kwargs):
         transforms.RandomHorizontalFlip(kwargs['Hflip_p']),
         transforms.RandomVerticalFlip(kwargs['Vflip_p']),
         FirstChannelRandomGaussianBlur(kwargs['blur_p'], kernel_size=kwargs['blur_kernel_size'], sigma=kwargs['blur_sigma']),
+        FirstChannelRandomNoise(p=kwargs['noise_p'])
     ]
     if kwargs['shuffle_tranforms']: random.shuffle(transform_list)
     T = transforms.Compose(transform_list)
