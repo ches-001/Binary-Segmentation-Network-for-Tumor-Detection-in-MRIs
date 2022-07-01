@@ -17,7 +17,6 @@ class Noise:
         image = image + speckle
         return image
 
-
     @staticmethod
     def apply_salt_and_pepper(image, n_pixels=500):
         _, H, W = image.shape
@@ -41,7 +40,7 @@ class Noise:
 
 
 class FirstChannelRandomGaussianBlur(object):
-    def __init__(self, p, kernel_size=(5, 9), sigma=(0.1, 11)):
+    def __init__(self, p, kernel_size=(3, 9), sigma=(0.1, 11)):
         self.p = p
         self.kernel_size = kernel_size
         self.sigma = sigma
@@ -126,6 +125,22 @@ class CustomRandomResizedCrop(object):
         return sample
 
 
+class CustomCompose(transforms.Compose):
+    def __init__(self, transforms, shuffle=False):
+        super(CustomCompose, self).__init__(transforms)
+        self.transforms = transforms
+        self.shuffle = shuffle
+
+    def __call__(self, image):
+        transforms = self.transforms
+        if self.shuffle:
+            transforms = random.sample(self.transforms, len(self.transforms))
+            
+        for T in transforms:
+            image = T(image)
+        return image
+
+
 def image_resize(image, size=(224, 224)):
     #image shape: C, H, W or N, C, H, W
     H, W = size
@@ -172,6 +187,8 @@ def data_augmentation(**kwargs):
         FirstChannelRandomGaussianBlur(kwargs['blur_p'], kernel_size=kwargs['blur_kernel_size'], sigma=kwargs['blur_sigma']),
         FirstChannelRandomNoise(p=kwargs['noise_p'])
     ]
-    if kwargs['shuffle_tranforms']: random.shuffle(transform_list)
-    T = transforms.Compose(transform_list)
+    T = CustomCompose(transform_list, shuffle=kwargs['shuffle_tranforms'])
     return T
+
+if __name__ == '__main__':
+    data_transforms = data_augmentation()
