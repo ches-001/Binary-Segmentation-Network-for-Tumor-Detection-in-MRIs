@@ -95,6 +95,8 @@ dataset = ImageDataset(self, images, images_df, transform=T, tp=0.5, input_size=
 ```
 The `tp` argument corresponds to the probability of a given sample being transformed, `tp=1.0` implies that the transforms will be applied to the data samples all the time. Refer to ['the transforms code file']('https://github.com/ches-001/Binary-Segmentation-Network-for-Tumor-Detection-in-MRIs/blob/main/script/binary_segmentation/transforms.py') for more details on the keyword arguments of the `transforms.data_augmentation()`. You can also refer to the jupyter notebook or the code files for the inner workings of the classes as well as how they are used.
 
+The input input to your model must not necessarily have the same size as the corresponding targets. In the pipline class during training and testing, the target's `Height` and `Width` are passed as `output_size: tuple = (H, W)` argument to the model's forward method alongside the input, the model produces a mask equal to the shape of the input and reshapes the mask to the size passed into it. If no size is passed, the model simply outputs a mask equal to the input size.
+
 
 <br>
 
