@@ -47,7 +47,7 @@ class FitterPipeline:
                 self.model.zero_grad()
                 image, gt_mask = image.to(self.device), gt_mask.to(self.device)
                 
-                pred_mask = self.model(image)
+                pred_mask = self.model(image, output_size=tuple(gt_mask.shape[2:]))
                 
                 #batch loss
                 batch_loss = self.lossfunc(pred_mask, gt_mask)
@@ -84,7 +84,7 @@ class FitterPipeline:
 
                 image, gt_mask = image.to(self.device), gt_mask.to(self.device)
 
-                pred_mask = self.model(image)
+                pred_mask = self.model(image, output_size=tuple(gt_mask.shape[2:]))
 
                 #batch loss
                 batch_loss = self.lossfunc(pred_mask, gt_mask)

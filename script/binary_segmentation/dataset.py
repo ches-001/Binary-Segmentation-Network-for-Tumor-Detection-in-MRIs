@@ -6,11 +6,15 @@ from binary_segmentation.transforms import image_resize, image_normalize
 
 
 class ImageDataset(Dataset):
-    def __init__(self, images, images_df, transform=None, tp=0.5):
+    def __init__(self, images, images_df, transform=None, 
+                 tp=0.5, input_size=(224, 224), target_size=(224, 224)):
+      
         self.images = images
         self.images_df = images_df
         self.transform = transform
         self.tp = tp
+        self.input_size = input_size
+        self.target_size = target_size
         
         
     def __len__(self):
@@ -38,8 +42,8 @@ class ImageDataset(Dataset):
                     ))
                 image, gt_mask = aug[0].unsqueeze(dim=0), aug[1:]
 
-        image = image_resize(image).type(torch.float32) #shape: (1, H, W)
-        gt_mask = image_resize(gt_mask).type(torch.float32) #shape: (3, H, W)
+        image = image_resize(image, self.input_size).type(torch.float32) #shape: (1, H, W)
+        gt_mask = image_resize(gt_mask, self.target_size).type(torch.float32) #shape: (3, H, W)
         image = image_normalize(image)
 
         return image, gt_mask

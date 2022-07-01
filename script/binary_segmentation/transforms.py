@@ -141,7 +141,7 @@ class CustomCompose(transforms.Compose):
         return image
 
 
-def image_resize(image, size=(224, 224)):
+def image_resize(image, size):
     #image shape: C, H, W or N, C, H, W
     H, W = size
     assert len(image.shape) == 3 or len(image.shape) == 4, \

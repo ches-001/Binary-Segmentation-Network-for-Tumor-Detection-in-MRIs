@@ -84,14 +84,14 @@ dataset = ImageDataset(self, images, images_df)
 The `images` argument is a list or tuple of training images and the `images_df` is a pandas dataframe with metadata corresponding to each of the images in the list/tuple.
 In this implementation, because of the size of the image data it was decided that loading them all at once to populate a list was best as it would be faster than simply loading each sample from ROM storage.
 
-To use data augmentation techniques alongside the image dataset, you can do as follows:
+To use data augmentation techniques alongside the image dataset as well as set the input and targets sizes, you can do as follows:
 
 ```python
 from binary_segmentation import data_augmentation
 
 T = data_augmentation()
 
-dataset = ImageDataset(self, images, images_df, transform=T, tp=0.5)
+dataset = ImageDataset(self, images, images_df, transform=T, tp=0.5, input_size=(224, 224), target_size=(224, 224))
 ```
 The `tp` argument corresponds to the probability of a given sample being transformed, `tp=1.0` implies that the transforms will be applied to the data samples all the time. Refer to ['the transforms code file']('https://github.com/ches-001/Binary-Segmentation-Network-for-Tumor-Detection-in-MRIs/blob/main/script/binary_segmentation/transforms.py') for more details on the keyword arguments of the `transforms.data_augmentation()`. You can also refer to the jupyter notebook or the code files for the inner workings of the classes as well as how they are used.
 
@@ -122,7 +122,7 @@ Similar to the other two imports, the loss function can be imported and used lik
 ```python
 from binary_segmentation import SegmentationMetric
 
-metricfunc = SegmentationMetric(w1=0.5, w2=o.5, debug=False)
+metricfunc = SegmentationMetric(w1=0.5, w2=0.5, debug=False)
 loss = metricfunc(pred, target)
 ```
 **NOTE:** You should enable debug mode when training with CUDA to catch unforseen errors and give you the corresponding location of said error. Debug mode is slightly slower than normal mode.
