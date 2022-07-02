@@ -116,7 +116,7 @@ The loss is given as: $$ Ldc = 1 - [2 * (Y n X) / (Y + X)] $$
 The boundary based loss used is the hausdorff distance metric: minimising this metric ensures that the 2D distance between surfaces of ground tuth and prediction is tending towards 0 than to 1.
 The loss is given as: $$ Lhd = max[ max_x(min_y(||x - y||)), max_y(min_x(||y - x||)) ] $$, where x ∈ X and y ∈ Y
 
-The optimizer used for this implementation is the ADAM (Adaptive Moment Estimation) optimizer with initial learning rate of 1e-3. A step learning rate scheduler was utilised with step size of 15 and gamma value of 0.1. The model was trained from scratch with no pretrained weights for 50 epochs.
+The optimizer used for this implementation is the ADAM (Adaptive Moment Estimation) optimizer with initial learning rate of 1e-3. A step learning rate scheduler was utilised with step size of 15 and gamma value of 0.1. The model was trained from scratch with no pretrained weights for 60 epochs.
 
 
 Similar to the other two imports, the loss function can be imported and used like so:

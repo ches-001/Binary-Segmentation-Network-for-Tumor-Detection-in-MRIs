@@ -172,7 +172,7 @@ class SegmentNet(nn.Module):
         fmap1, fmap2, fmap3, fmap4, fmap5 = self.encoder(x)
         segmentation_mask = self.decoder(fmap1, fmap2, fmap3, fmap4, fmap5)
 
-        if output_size:
+        if output_size and tuple(segmentation_mask.shape[2:]) != tuple(output_size):
             segmentation_mask = image_resize(segmentation_mask, size=output_size)
         
         return segmentation_mask
