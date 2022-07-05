@@ -61,24 +61,24 @@ class SpatialEncoder(ResNet):
 
 
 class Decoder(nn.Module):
-    def __init__(self, last_fmap_channel, output_channel, n_classes, dropout=0.2):
+    def __init__(self, last_fmap_channels, output_channels, n_classes, dropout=0.2):
         super(Decoder, self).__init__()
         
-        self.last_fmap_channel = last_fmap_channel
-        self.output_channel = output_channel
+        self.last_fmap_channels = last_fmap_channels
+        self.output_channels = output_channels
         self.n_classes = n_classes
         self.dropout = dropout
         
         fmap1_ch, fmap2_ch, fmap3_ch, fmap4_ch, fmap5_ch = (
-            self.last_fmap_channel//8,
-            self.last_fmap_channel//8, 
-            self.last_fmap_channel//4, 
-            self.last_fmap_channel//2, 
-            self.last_fmap_channel
+            self.last_fmap_channels//8,
+            self.last_fmap_channels//8, 
+            self.last_fmap_channels//4, 
+            self.last_fmap_channels//2, 
+            self.last_fmap_channels
         )
 
-        if self.last_fmap_channel == 2048:
-            fmap1_ch = self.last_fmap_channel//32
+        if self.last_fmap_channels == 2048:
+            fmap1_ch = self.last_fmap_channels//32
         
         self.layer1 = nn.Sequential(
             nn.ConvTranspose2d(fmap5_ch, fmap5_ch, (2, 2), stride=(2, 2)),
@@ -113,7 +113,7 @@ class Decoder(nn.Module):
         
         in_ch = fmap5_ch+fmap1_ch
         self.layer5 = nn.Sequential(
-            nn.ConvTranspose2d(in_ch, self.output_channel*self.n_classes, (2, 2), stride=(2, 2)),
+            nn.ConvTranspose2d(in_ch, self.output_channels*self.n_classes, (2, 2), stride=(2, 2)),
             nn.Sigmoid()
         )
         
@@ -135,16 +135,16 @@ class Decoder(nn.Module):
 
 
 class SegmentNet(nn.Module):
-    def __init__(self, input_channels, last_fmap_channel, 
-                output_channel, n_classes, 
+    def __init__(self, input_channels, last_fmap_channels, 
+                output_channels, n_classes, 
                 pretrained=False, enc_dropout=0.1,
                 dec_dropout=0.1, device='cpu'):
         
         super(SegmentNet, self).__init__()
     
         self.input_channels = input_channels
-        self.last_fmap_channel = last_fmap_channel
-        self.output_channel = output_channel
+        self.last_fmap_channels = last_fmap_channels
+        self.output_channels = output_channels
         self.pretrained = pretrained
         self.n_classes = n_classes
         self.enc_dropout = enc_dropout
@@ -156,8 +156,8 @@ class SegmentNet(nn.Module):
             self.enc_dropout)
         
         self.decoder = Decoder(
-            self.last_fmap_channel, 
-            self.output_channel, 
+            self.last_fmap_channels, 
+            self.output_channels, 
             self.n_classes, 
             self.dec_dropout
         )
