@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch, random
 from torch.utils.data import Dataset
-from binary_segmentation.transforms import image_resize, image_normalize
+from .transforms import image_resize, image_normalize
 
 
 class ImageDataset(Dataset):
