@@ -1,8 +1,8 @@
-import os
+import os, torch
 import torch.nn as nn
-import torch, torchvision
 from torchvision.models.resnet import ResNet, BasicBlock
 from .transforms import image_resize
+from typing import Optional
 
 
 MODEL_PARAM_DIR = r'model_params'
@@ -14,8 +14,8 @@ MODEL_PARAM_PATH = os.path.join(
 
 
 class SpatialEncoder(ResNet):
-    def __init__(self, input_channels, dropout=0.2, 
-                 pretrained=False, block=BasicBlock, block_layers=[3, 4, 6, 3]):
+    def __init__(self, input_channels:int, dropout:float=0.2, 
+                 pretrained:bool=False, block=BasicBlock, block_layers:list=[3, 4, 6, 3]):
       
         self.block = block
         self.block_layers = block_layers
@@ -46,7 +46,7 @@ class SpatialEncoder(ResNet):
         del self.maxpool, self.fc, self.avgpool
         
         
-    def forward(self, x):
+    def forward(self, x:torch.Tensor):
         fmap1 = self.conv1(x)
         x = self.conv2(fmap1)
         x = self.bn1(x)
@@ -61,7 +61,8 @@ class SpatialEncoder(ResNet):
 
 
 class Decoder(nn.Module):
-    def __init__(self, last_fmap_channels, output_channels, n_classes, dropout=0.2):
+    def __init__(
+        self, last_fmap_channels:int, output_channels:int, n_classes:int, dropout:float=0.2):
         super(Decoder, self).__init__()
         
         self.last_fmap_channels = last_fmap_channels
@@ -117,7 +118,10 @@ class Decoder(nn.Module):
             nn.Sigmoid()
         )
         
-    def forward(self, fmap1, fmap2, fmap3, fmap4, fmap5):
+    def forward(
+        self, fmap1:torch.Tensor, fmap2:torch.Tensor, 
+        fmap3:torch.Tensor, fmap4:torch.Tensor, fmap5:torch.Tensor):
+
         output = self.layer1(fmap5)
         output = torch.cat((output, fmap4), dim=1)
         
@@ -135,10 +139,10 @@ class Decoder(nn.Module):
 
 
 class SegmentNet(nn.Module):
-    def __init__(self, input_channels, last_fmap_channels, 
-                output_channels, n_classes, 
-                pretrained=False, enc_dropout=0.1,
-                dec_dropout=0.1, device='cpu'):
+    def __init__(self, input_channels:int, last_fmap_channels:int, 
+                output_channels:int, n_classes:int, 
+                pretrained:bool=False, enc_dropout:float=0.1,
+                dec_dropout:float=0.1, device:bool='cpu'):
         
         super(SegmentNet, self).__init__()
     
@@ -168,7 +172,7 @@ class SegmentNet(nn.Module):
             state_dict = torch.load(MODEL_PARAM_PATH, map_location=self.device)
             self.load_state_dict(state_dict['segmentation_net_params'])
     
-    def forward(self, x, output_size=None):
+    def forward(self, x:torch.Tensor, output_size:Optional[tuple]=None):
         fmap1, fmap2, fmap3, fmap4, fmap5 = self.encoder(x)
         segmentation_mask = self.decoder(fmap1, fmap2, fmap3, fmap4, fmap5)
 

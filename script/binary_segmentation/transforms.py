@@ -1,24 +1,27 @@
 import numpy as np
 import torch, random
 from torchvision import transforms
+from typing import Union, Optional
 
 
 class Noise:
     
     @staticmethod
-    def apply_gaussian(image, mean=0, std=1):
+    def apply_gaussian(
+        image:torch.Tensor, mean:Optional[Union[int, float]]=0, std:Optional[Union[int, float]]=1):
         noise = torch.normal(mean=mean, std=std, size=image.shape)
         image = image + noise
         return image
 
     @staticmethod
-    def apply_speckle(image, mean=0, std=1):
+    def apply_speckle(
+        image:torch.Tensor, mean:Optional[Union[int, float]]=0, std:Optional[Union[int, float]]=1):
         speckle = image * Noise.apply_gaussian(image, mean, std)
         image = image + speckle
         return image
 
     @staticmethod
-    def apply_salt_and_pepper(image, n_pixels=500):
+    def apply_salt_and_pepper(image:torch.Tensor, n_pixels:int=500):
         _, H, W = image.shape
 
         for op in ['salt', 'pepper']:
@@ -32,7 +35,7 @@ class Noise:
         return image
         
     @staticmethod
-    def apply_poisson(image, rate=5):
+    def apply_poisson(image:torch.Tensor, rate:Optional[Union[int, float]]=5):
         noise = torch.rand(*image.shape) * rate
         noise = torch.poisson(noise)
         image = image + noise
@@ -40,13 +43,13 @@ class Noise:
 
 
 class FirstChannelRandomGaussianBlur(object):
-    def __init__(self, p, kernel_size=(3, 9), sigma=(0.1, 11)):
+    def __init__(self, p:float, kernel_size:tuple=(3, 9), sigma:tuple=(0.1, 11)):
         self.p = p
         self.kernel_size = kernel_size
         self.sigma = sigma
         self.gaussian_blur = transforms.GaussianBlur(kernel_size=self.kernel_size, sigma=self.sigma)
 
-    def __call__(self, sample):
+    def __call__(self, sample:torch.Tensor):
         #input shape: (4, H, W)
         if self.p < random.random():return sample
 
@@ -57,7 +60,7 @@ class FirstChannelRandomGaussianBlur(object):
 
 
 class FirstChannelRandomNoise(object):
-    def __init__(self, p=0.5, **kwargs):
+    def __init__(self, p:float=0.5, **kwargs):
         defaultKwargs = {
             'mean_range':(0, 50),
             'std_range':(1, 50),
@@ -68,7 +71,7 @@ class FirstChannelRandomNoise(object):
         self.kwargs = {**defaultKwargs, **kwargs}
         self.ops = ('gaussian', 'speckle', 'salt_&_pepper', 'poisson')
 
-    def __call__(self, sample):
+    def __call__(self, sample:torch.Tensor):
         if self.p < random.random():return sample
 
         image, mask = sample[0].unsqueeze(dim=0), sample[1:]
@@ -96,12 +99,12 @@ class FirstChannelRandomNoise(object):
 
         
 class CustomRandomRotation(object):
-    def __init__(self, p, angle_range=(0, 360)):
+    def __init__(self, p:float, angle_range:tuple=(0, 360)):
         self.p = p
         self.angle_range = angle_range
         self.random_rotation = transforms.RandomRotation(self.angle_range)
 
-    def __call__(self, sample):
+    def __call__(self, sample:torch.Tensor):
         #input shape: (C, H, W)
         if self.p < random.random():return sample
 
@@ -110,11 +113,11 @@ class CustomRandomRotation(object):
 
   
 class CustomRandomResizedCrop(object):
-    def __init__(self, p, scale=(0.5, 1.0)):
+    def __init__(self, p:float, scale:tuple=(0.5, 1.0)):
         self.p = p
         self.scale = scale
 
-    def __call__(self, sample):
+    def __call__(self, sample:torch.Tensor):
         #input shape: (C, H, W)
         if self.p < random.random():return sample
 
@@ -126,12 +129,12 @@ class CustomRandomResizedCrop(object):
 
 
 class CustomCompose(transforms.Compose):
-    def __init__(self, transforms, shuffle=False):
+    def __init__(self, transforms:list, shuffle:bool=False):
         super(CustomCompose, self).__init__(transforms)
         self.transforms = transforms
         self.shuffle = shuffle
 
-    def __call__(self, image):
+    def __call__(self, image:torch.Tensor):
         transforms = self.transforms
         if self.shuffle:
             transforms = random.sample(self.transforms, len(self.transforms))
@@ -141,9 +144,12 @@ class CustomCompose(transforms.Compose):
         return image
 
 
-def image_resize(image, size):
+def image_resize(image:Union[torch.Tensor, np.ndarray], size:Union[int, tuple]):
     #image shape: C, H, W or N, C, H, W
-    H, W = size
+    if isinstance(size, int): H, W = size, size
+    elif isinstance(size, tuple): H, W = size
+    else: raise TypeError(f'size is required to be of type int fo tuple, {type(size)} given')
+
     assert len(image.shape) == 3 or len(image.shape) == 4, \
      'input image must be of shape  C, H, W or N, C, H, W'
 
@@ -153,7 +159,7 @@ def image_resize(image, size):
     return image
 
 
-def image_normalize(image):
+def image_normalize(image:Union[torch.Tensor, np.ndarray]):
     #image size: (C, H, W)
     image = image.max() - image
     image = image - image.min()

@@ -3,11 +3,12 @@ import pandas as pd
 import torch, random
 from torch.utils.data import Dataset
 from .transforms import image_resize, image_normalize
+from typing import Optional
 
 
 class ImageDataset(Dataset):
-    def __init__(self, images, images_df, transform=None, 
-                 tp=0.5, input_size=(224, 224), target_size=(224, 224)):
+    def __init__(self, images:list, images_df:pd.DataFrame, transform:Optional[object]=None, 
+                 tp:float=0.5, input_size:tuple=(224, 224), target_size:tuple=(224, 224)):
       
         self.images = images
         self.images_df = images_df
@@ -24,8 +25,6 @@ class ImageDataset(Dataset):
     def __getitem__(self, idx:int):
         image = self.images[idx]
         image = np.expand_dims(image, axis=0).astype('int32')
-
-        original_H, original_W = image.shape[1:]
         
         lb_seg_mask = self.rle2mask(image.shape[1:], self.images_df.large_bowel[idx])
         sb_seg_mask = self.rle2mask(image.shape[1:], self.images_df.small_bowel[idx])
@@ -49,7 +48,7 @@ class ImageDataset(Dataset):
         return image, gt_mask
     
 
-    def rle2mask(self, img_shape, rle:str):
+    def rle2mask(self, img_shape:tuple, rle:str):
         #correct order: (H, W)
         H, W = img_shape
         if pd.isnull(rle): return np.zeros((H, W), dtype=np.int8)

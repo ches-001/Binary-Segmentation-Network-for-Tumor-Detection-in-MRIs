@@ -1,9 +1,12 @@
 import torch.nn as nn
+from torch.utils.data import DataLoader
 import torch, tqdm, os
+from typing import Optional
 
 class FitterPipeline:
-    def __init__(self, model, lossfunc, optimizer, device='cpu', 
-    weight_init=True, custom_weight_initializer=None):
+    def __init__(
+        self, model:nn.Module, lossfunc:nn.Module, optimizer:torch.optim.Optimizer, device:str='cpu', 
+    weight_init:bool=True, custom_weight_initializer:Optional[object]=None):
     
         self.device = device
         self.model = model.to(self.device)
@@ -19,7 +22,7 @@ class FitterPipeline:
                 self.model.apply(self.xavier_init_weights)
         
     
-    def xavier_init_weights(self, m):
+    def xavier_init_weights(self, m:nn.Module):
         if isinstance(m, nn.Conv2d):
             nn.init.xavier_uniform_(m.weight)
             if torch.is_tensor(m.bias):
@@ -36,7 +39,7 @@ class FitterPipeline:
         return torch.save(state_dicts, os.path.join(dirname, filename))
         
 
-    def train(self, dataloader, epochs=1, verbose=False):
+    def train(self, dataloader:DataLoader, epochs:int=1, verbose:bool=False):
         self.model.train()
         
         losses, hds, dice_coeffs = [], [], []
@@ -75,7 +78,7 @@ class FitterPipeline:
         return losses, hds, dice_coeffs
     
     
-    def test(self, dataloader, verbose=False):
+    def test(self, dataloader:DataLoader, verbose:bool=False):
         self.model.eval()
         
         loss, hd, dice_coeff = 0, 0, 0

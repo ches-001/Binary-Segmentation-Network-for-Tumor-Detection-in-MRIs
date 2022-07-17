@@ -4,7 +4,7 @@ from monai.metrics import compute_hausdorff_distance
 
 
 class SegementationMetric(nn.Module):
-    def __init__(self, w1=0.6, w2=0.4, debug=False):
+    def __init__(self, w1:float=0.6, w2:float=0.4, debug:bool=False):
         """
         w1 corresponds to weightage of hausdorff distance
         w2 corresponds to weightage of dice coefficent score
@@ -20,18 +20,18 @@ class SegementationMetric(nn.Module):
         self.debug = debug
 
     
-    def hausdorff_distance(self, pred, target):
+    def hausdorff_distance(self, prediction:torch.Tensor, ground_truth:torch.Tensor):
         #pred shape: (N, C, H, W)
         #target shape: (N, C, H, W)
-        pred = pred.detach().cpu().round()
-        target = target.cpu()
+        prediction = prediction.detach().cpu().round()
+        ground_truth = ground_truth.cpu()
 
-        max_dist = max(target.shape[2:])
+        max_dist = max(ground_truth.shape[2:])
 
         warnings.filterwarnings("ignore")
 
         #compute the hausdorff distance for each batch
-        batch_distances = compute_hausdorff_distance(pred, target, distance_metric='euclidean', include_background=True)
+        batch_distances = compute_hausdorff_distance(prediction, ground_truth, distance_metric='euclidean', include_background=True)
 
         batch_distances[batch_distances == torch.inf] = max_dist
         batch_distances[batch_distances != batch_distances] = 0
@@ -43,7 +43,7 @@ class SegementationMetric(nn.Module):
         return dist
 
 
-    def dice_coeff(self, prediction, ground_truth, epsilon=1e-5):
+    def dice_coeff(self, prediction:torch.Tensor, ground_truth:torch.Tensor, epsilon:float=1e-5):
         #input shape: N, C, H, W
         prediction = prediction.cpu().round()
         ground_truth = ground_truth.cpu()
@@ -53,7 +53,7 @@ class SegementationMetric(nn.Module):
         return dice_coeff.item()
 
       
-    def metric_values(self, prediction, ground_truth):
+    def metric_values(self, prediction:torch.Tensor, ground_truth:torch.Tensor):
         #input shape: N, C, H, W
 
         if self.debug:
@@ -82,7 +82,7 @@ class SegementationMetric(nn.Module):
         return hausdorff_distance, dice_coeff, bce_loss
 
     
-    def forward(self, prediction, ground_truth):
+    def forward(self, prediction:torch.Tensor, ground_truth:torch.Tensor):
         #input shape: N, C, H, W
         hausdorff_distance, dice_coeff, bce_loss = self.metric_values(prediction, ground_truth)
         hausdorff_distance = torch.tensor(hausdorff_distance)
