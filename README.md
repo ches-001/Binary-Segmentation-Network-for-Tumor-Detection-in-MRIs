@@ -103,18 +103,18 @@ The input input to your model must not necessarily have the same size as the cor
 ### Loss functions
 The loss function utilised in this implementation is a combination of three kinds of losses, namely: **Probability distribution loss**, **Region based loss** and **Boundary based loss**
 
-The loss is given as: $$L = (1+Lbce) * [1 - (w_1*(1-Lhd) + w_2*(1 - Ldc))]$$
+The loss is given as: $L = (1+Lbce) * [1 - (w_1*(1-Lhd) + w_2*(1 - Ldc))]$
 Where w_1 and w_2 are weights values attached to the boundary and region based losses respectively.
 Here we add 1 to the probability distribution loss to prevent vanishing gradients when it finally gets minimised.
 
 The probability distribution loss is the Binary Cross Entropy loss. This loss aims to reduce the probability distribution between ground truth and prediction.
-The loss is given as: $$ Lbce = y * log(x) + (1 - y) * log(1 - x) $$
+The loss is given as: $Lbce = y * log(x) + (1 - y) * log(1 - x)$
 
 The region based loss used is the dice loss. This loss aims to improve the jaccard index (intersection over union) between ground truth and prediction.
-The loss is given as: $$ Ldc = 1 - [2 * (Y n X) / (Y + X)] $$
+The loss is given as: $Ldc = 1 - [2 * (Y n X) / (Y + X)]$
 
 The boundary based loss used is the hausdorff distance metric: minimising this metric ensures that the 2D distance between surfaces of ground tuth and prediction is tending towards 0 than to 1.
-The loss is given as: $$ Lhd = max[ max_x(min_y(||x - y||)), max_y(min_x(||y - x||)) ] $$, where x ∈ X and y ∈ Y
+The loss is given as: $Lhd = max[ max_x(min_y(||x - y||)), max_y(min_x(||y - x||)) ]$, where x ∈ X and y ∈ Y
 
 The optimizer used for this implementation is the ADAM (Adaptive Moment Estimation) optimizer with initial learning rate of 1e-3. A step learning rate scheduler was utilised with step size of 15 and gamma value of 0.1. The model was trained from scratch with no pretrained weights for 60 epochs.
 
