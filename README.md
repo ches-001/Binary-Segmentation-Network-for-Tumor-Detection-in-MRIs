@@ -103,7 +103,7 @@ The input input to your model must not necessarily have the same size as the cor
 ### Loss functions
 The loss function utilised in this implementation is a combination of three kinds of losses, namely: **Probability distribution loss**, **Region based loss** and **Boundary based loss**
 
-The loss is given as: $L = (1+Lbce) * [1 - (w_1*(1-Lhd) + w_2*(1 - Ldc))]$
+The loss is given as: $L = (1+Lbce) * [1 - (w_1*(Lhd) + w_2*(1 - Ldc))]$
 Where w_1 and w_2 are weights values attached to the boundary and region based losses respectively.
 Here we add 1 to the probability distribution loss to prevent vanishing gradients when it finally gets minimised.
 
